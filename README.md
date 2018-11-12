@@ -11,7 +11,7 @@ Make sure that you have Node.js installed on your device and then clone the repo
 
 Download or clone the repository in your computer:
 ```sh
-$ git clone https://github.com/Rajeshvirola/Neighbourhood-Map.git
+$ git clone https://github.com/Rajeshvirola/neighbourhood-map.git
 ```
 - install project dependencies with
 
