@@ -1,3 +1,42 @@
+# London's museums
+
+## Description:
+This single page app uses Google maps and Foursquare's API to list all the available museums near by in London, England. This project was made for Udacity's front-end web developer Nanodegree to demonstrate a good understanding of: reactJS, javascript, API usage, HTML, CSS, responsive design, and front-end web development overall.
+
+## Specification
+The goal of this project was to build a single page map application using React & Google Maps API, plus to integrate a third-party data API and make the app accessible and usable offline.
+
+## How to run this project:
+Make sure that you have Node.js installed on your device and then clone the repository. Navigate to the directory that contains the project and write:
+
+Download or clone the repository in your computer:
+```sh
+$ git clone https://github.com/Rajeshvirola/Neighbourhood-Map.git
+```
+- install project dependencies with
+
+```sh
+npm install react react-dom
+npm install --save react-async-script-loader
+npm install react-search-input
+npm install sort-by
+```
+- start the development server with
+
+```sh
+npm start
+```
+
+The browser should automatically open the app. If it doesn't, navigate to [http://localhost:3000](http://localhost:3000/)
+
+## Important
+Service Worker providing offline capabilities works only in the production mode.
+
+## APIs Used
+- Google Maps API for the map.
+- Places API by FourSquare
+
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
