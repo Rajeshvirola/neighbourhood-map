@@ -1,150 +1,224 @@
 import React, { Component } from 'react';
 import './App.css';
-import ListView from './ListView'
-import scriptLoader from 'react-async-script-loader';
-import {createFilter} from 'react-search-input';
-import { mapStyles } from './mapStyles.js';
+import axios from 'axios';
+import MenuComponent from './MenuComponent';
+import ErrorBoundary from './ErrorBoundary';
+import SearchPage from './SearchPage';
+import escapeRegExp from 'escape-string-regexp';
 
-var markers = [];
-var infoWindows = [];
 
 class App extends Component {
+
   constructor(props) {
-    super(props);
-    this.loadMarkers = this.loadMarkers.bind(this);
+    super(props)
     this.state = {
+      venues: [],
       markers: [],
-      infoWindows: [],
-      places: [],
-      map: {},
+      showVenues: [],
       query: '',
-      requestWasSuccessful: true
-    }
+      notVisibleMarkers: []
+  }}
+
+  componentDidMount() {
+    this.getVenues()
   }
 
-  componentWillReceiveProps({isScriptLoadSucceed}){
-    if (isScriptLoadSucceed) {
-      // initiating the map.
-      var map = new window.google.maps.Map(document.getElementById('map'), {
-        zoom: 13,
-        center: new window.google.maps.LatLng(51.507351,-0.127758),
-        styles: mapStyles
-      });
-      this.setState({map});
-      this.loadMarkers(map)
-    }
-    else {
-      console.log("google maps API couldn't load.");
-      this.setState({requestWasSuccessful: false})
-    }
+
+
+  /*
+  * renderMap:
+  * - load script
+  * - initializes the map
+  */
+
+  renderMap = () => {
+    loadScript("https://maps.googleapis.com/maps/api/js?key=AIzaSyANIROoZ1fyuVwJJZqvJewchXrEye-r0HU&callback=initMap")
+    window.initMap = this.initMap;
   }
 
-  // this function takes in the map object and then sends a CORS request to the
-  // foursquares API to find the neariest museums and added the markers and
-  // inforwindows to the markers
-  loadMarkers(map) {
-    var CORSRequest = this.createCORSRequest('GET',"https://api.foursquare.com/v2/venues/search?ll=51.507351,-0.127758&query=museum&radius=2500&categoryId=4bf58dd8d48988d181941735&client_id=J2E305JWASGSYFP5FY2C5C2DKBHYTAXGR1514K3S0HLLOSIP&client_secret=PDDTROAZZLCBIH5USIWZSDQDSPY2N0B454HZ3H2FNZVIGANM&v=20201215&limit=50");
-    CORSRequest.onload = () => {
-      this.setState({ places: JSON.parse(CORSRequest.responseText).response.venues.filter(createFilter(this.state.query, ['name', 'location.address']))});
-      markers.forEach(m => { m.setMap(null) });
-      // Clearing the markers and the infoWindows arrays so that the old
-      // objects wouldn't be stacked below the new objects.
-      markers = [];
-      infoWindows = [];
-      this.state.places.forEach(place => {
-        var contentString =
-        `<div class="infoWindow">
-          <h1>${place.name}</h1>
-          <h2>${place.location.address ? place.location.address : place.location.formattedAddress[0]}</h2>
-          ${place.url ? "<a href=" + place.url + ">Go to official website</a>" : ""}
-        </div>`
-        // Create An Info Window.
-        var infoWindow= new window.google.maps.InfoWindow({
-          content: contentString,
-          name: place.name
-        });
-        // Create Marker.
-        var marker = new window.google.maps.Marker({
-          map: map,
-          position: place.location,
-          animation: window.google.maps.Animation.DROP,
-          name : place.name
-        });
-        marker.addListener('click', function() {
-          infoWindow.open(map, marker);
-          if (marker.getAnimation() !== null) {
-            marker.setAnimation(null);
-          } else {
-            marker.setAnimation(window.google.maps.Animation.BOUNCE);
-            setTimeout(() => {marker.setAnimation(null);}, 300)
-          }
-        });
-        marker.addListener('click', function() {
-          infoWindow.open(map, marker);
-        });
-        markers.push(marker);
-        infoWindows.push(infoWindow);
-        this.setState({markers})
-        this.setState({infoWindows})
-      })
-    };
-    CORSRequest.onerror = () => {
-      this.setState({requestWasSuccessful: false});
+
+  /*
+  * endPoint & parameters:
+  * https://developer.foursquare.com/docs/api/venues/explore
+  */
+
+  getVenues = () => {
+    const endPoint = "https://api.foursquare.com/v2/venues/explore?"
+    const parameters = {
+      client_id: "J2E305JWASGSYFP5FY2C5C2DKBHYTAXGR1514K3S0HLLOSIP",
+      client_secret: "PDDTROAZZLCBIH5USIWZSDQDSPY2N0B454HZ3H2FNZVIGANM",
+      query: "museums",
+      ll: "51.507351,-0.127758",
+      v: "20201215",
+      limit: 50
     }
-    CORSRequest.send();
+
+
+    // FETCH API - axios
+
+    axios.get(endPoint + new URLSearchParams(parameters))
+    .then(response => {
+      this.setState({
+        venues: response.data.response.groups[0].items,
+        showVenues: response.data.response.groups[0].items
+      }, this.renderMap())
+    })
+    .catch(error => {
+      alert(`Sorry, fetching data from Foursquare was not possible!`)
+      console.log("Foursquare error! " + error)
+    })
   }
 
-  // Used the tutorial in https://www.html5rocks.com/en/tutorials/cors/ to create a CORS request function.
-  createCORSRequest(method, url) {
-    var xhr = new XMLHttpRequest();
-    if ("withCredentials" in xhr) {
-      xhr.open(method, url, true);
-    } else if (typeof XDomainRequest !== "undefined") {
-      // Otherwise, check if XDomainRequest.
-      // XDomainRequest only exists in IE, and is IE's way of making CORS requests.
-    //  xhr = new XDomainRequest();
-      xhr.open(method, url);
 
+  initMap = () => {
+
+    /*
+    * Create map.
+    * Center coordinates point to city, London - England.
+    */
+    var map = new window.google.maps.Map(document.getElementById('map'), {
+      center: {lat: 51.507351, lng: -0.127758},
+      zoom: 14
+    })
+
+    // Create an InfoWindow
+    const infowindow = new window.google.maps.InfoWindow({
+      maxWidth: 180
+    })
+
+    this.infowindow = infowindow
+
+    // eslint-disable-next-line
+    this.state.venues.map(myVenue => {
+
+      /*
+      * Reference: https://developers.google.com/maps/documentation/javascript/infowindows
+      * Content of the InfoWindow
+      */
+      const contentString = `<b>${myVenue.venue.name}</b> <br><i>${myVenue.venue.location.address}</i>`
+  
+
+      // Create a marker
+
+      const marker = new window.google.maps.Marker({
+        position: {lat: myVenue.venue.location.lat , lng: myVenue.venue.location.lng},
+        map: map,
+        animation: window.google.maps.Animation.DROP,
+        title: myVenue.venue.name
+        })
+
+        this.state.markers.push(marker)
+
+
+
+      // Set Animation with Marker Bounce.
+
+
+      function animationEffect() {
+        marker.setAnimation(window.google.maps.Animation.BOUNCE)
+        setTimeout(function(){ marker.setAnimation(null) }, 550)
+      }
+
+      function openMarker() {
+        // Setting the content of the InfoWindow
+        infowindow.setContent(contentString)
+        animationEffect()
+
+      // Open an InfoWindow upon clicking on its marker
+        infowindow.open(map, marker)
+      }
+
+
+      // Click on a marker
+      marker.addListener('click', function() {
+        openMarker()
+        })
+    }
+  )
+  }
+
+  // Handling the update query
+
+  updateQuery = query => {
+    this.setState({ query })
+    this.state.markers.map(marker => marker.setVisible(true))
+    let filterVenues
+    let notVisibleMarkers
+
+    if (query) {
+      const match = new RegExp(escapeRegExp(query), "i")
+      filterVenues = this.state.venues.filter(myVenue =>
+        match.test(myVenue.venue.name)
+      )
+      this.setState({ venues: filterVenues })
+      notVisibleMarkers = this.state.markers.filter(marker =>
+        filterVenues.every(myVenue => myVenue.venue.name !== marker.title)
+      )
+
+
+      // Hiding the markers for venues not included in the filtered venues
+
+      notVisibleMarkers.forEach(marker => marker.setVisible(false))
+
+      this.setState({ notVisibleMarkers })
     } else {
-      // Otherwise, alert the user that CORS is not supported by their browser.
-      xhr = null;
-      alert("CORS Requests are not supported by your browser please switch to another browser to have access to the website.");
+      this.setState({ venues: this.state.showVenues })
+      this.state.markers.forEach(marker => marker.setVisible(true))
     }
-    return xhr;
-  }
-
-  // queryHandler takes the query from the ListView sets the state and reloads the markers.
-  queryHandler(query) {
-    this.setState({query});
-    this.loadMarkers(this.state.map);
   }
 
 
   render() {
-    const {map, places, requestWasSuccessful} = this.state;
+    if (this.state.hasError) {
+      return <div id="Error-message" aria-label="Error message">Sorry, something went wrong!</div>
+    } else {
+      return (
+      <main>
+        <ErrorBoundary>
 
-    return (
-      requestWasSuccessful ? (
-        <div id="container">
-          <div id="map-container" role="application" tabIndex="-1">
-              <div id="map" role="application"></div>
-          </div>
-          <ListView
-            places={places}
-            settingQuery={(query) => {this.queryHandler(query)}}
-            markers={markers}
-            infoWindows={infoWindows}
-            map={map}/>
+        <div id="SearchBar" aria-label="Search Bar">
+          <SearchPage
+            venues={ this.state.showVenues }
+            markers={ this.state.markers }
+            filteredVenues={ this.filteredVenues }
+  	      	query={this.state.query}
+            clearQuery={this.clearQuery}
+	        	updateQuery={b => this.updateQuery(b)}
+	        	clickLocation={this.clickLocation}
+          />
         </div>
-      ) : (
-        <div>
-          <h1>loading map's api was unsuccessful. please try again later</h1>
+
+        <div id="container" aria-label="Menu Container">
+          <MenuComponent
+            venues={ this.state.venues }
+            markers={ this.state.markers }
+          />
         </div>
-      )
-    )
+
+        <div id="map" aria-label="Map" role="application">
+        </div>
+
+        </ErrorBoundary>
+      </main>
+    );
+  }
   }
 }
-// Using react-async-script-loader to load the google maps and google places API.
-export default scriptLoader(
-    [`https://maps.googleapis.com/maps/api/js?key=AIzaSyANIROoZ1fyuVwJJZqvJewchXrEye-r0HU&libraries=places`]
-)(App);
+
+
+// LoadScript
+
+function loadScript(url) {
+  let index  = window.document.getElementsByTagName("script")[0]
+  let script = window.document.createElement("script")
+  script.src = url
+  script.async = true
+  script.defer = true
+  index.parentNode.insertBefore(script, index)
+  script.onerror = function() {
+    alert("Error loading map! Check the URL!");
+  };
+}
+
+
+export default App;
