@@ -1,7 +1,7 @@
 # London's museums
 
 ## Description:
-This single page app uses Google maps and Foursquare's API to list all the available museums near by in London, England. This project was made for Udacity's front-end web developer Nanodegree to demonstrate a good understanding of: reactJS, javascript, API usage, HTML, CSS, responsive design, and front-end web development overall.
+This single page app uses Google maps and Foursquare's API to list all the available museums near by in London, England. This project was made for Udacity's front-end web developer Nanodegree Program.
 
 ## Specification
 The goal of this project was to build a single page map application using React & Google Maps API, plus to integrate a third-party data API and make the app accessible and usable offline.
