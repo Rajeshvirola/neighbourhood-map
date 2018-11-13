@@ -24,7 +24,7 @@ class App extends Component {
 
   componentWillReceiveProps({isScriptLoadSucceed}){
     if (isScriptLoadSucceed) {
-      // initiating the map and giving it to the loadMarkers function.
+      // initiating the map.
       var map = new window.google.maps.Map(document.getElementById('map'), {
         zoom: 13,
         center: new window.google.maps.LatLng(51.507351,-0.127758),
@@ -58,11 +58,12 @@ class App extends Component {
           <h2>${place.location.address ? place.location.address : place.location.formattedAddress[0]}</h2>
           ${place.url ? "<a href=" + place.url + ">Go to official website</a>" : ""}
         </div>`
-
+        // Create An Info Window.
         var infoWindow= new window.google.maps.InfoWindow({
           content: contentString,
           name: place.name
         });
+        // Create Marker.
         var marker = new window.google.maps.Marker({
           map: map,
           position: place.location,
@@ -97,8 +98,6 @@ class App extends Component {
   createCORSRequest(method, url) {
     var xhr = new XMLHttpRequest();
     if ("withCredentials" in xhr) {
-      // Check if the XMLHttpRequest object has a "withCredentials" property.
-      // "withCredentials" only exists on XMLHTTPRequest2 objects.
       xhr.open(method, url, true);
     } else if (typeof XDomainRequest !== "undefined") {
       // Otherwise, check if XDomainRequest.
@@ -145,7 +144,7 @@ class App extends Component {
     )
   }
 }
-// Using react-async-script-loader to laod the google maps and google places API.
+// Using react-async-script-loader to load the google maps and google places API.
 export default scriptLoader(
     [`https://maps.googleapis.com/maps/api/js?key=AIzaSyANIROoZ1fyuVwJJZqvJewchXrEye-r0HU&libraries=places`]
 )(App);
