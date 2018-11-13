@@ -19,7 +19,6 @@ $ git clone https://github.com/Rajeshvirola/neighbourhood-map.git
 npm install react react-dom
 npm install axios --save
 npm install react-burger-menu --save
-npm install react-search-input
 npm install escape-string-regexp --save
 ```
 - start the development server with
